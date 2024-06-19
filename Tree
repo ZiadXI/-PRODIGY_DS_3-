@@ -1,12 +1,38 @@
+# Load libraries
 library(rpart)
 library(rpart.plot)
+library(caret)
 
 # Load the dataset
-data(iris)
+data <- read.csv("C:\\Users\\Wind\\Downloads\\Compressed\\bank+marketing\\bank-full.csv", sep = ";", header = TRUE)
 
-# Create a decision tree model
-tree_model <- rpart(Species ~ ., data = iris, method = "class")
+# Convert categorical variables to factors
+categorical_vars <- c("job", "marital", "education", "default", "housing", "loan", "contact", "month", "poutcome", "y")
+data[categorical_vars] <- lapply(data[categorical_vars], as.factor)
+
+# Check for missing values
+sum(is.na(data))
+
+# Split the data into training (70%) and test (30%) sets
+set.seed(123)  # For reproducibility
+trainIndex <- createDataPartition(data$y, p = .7, 
+                                  list = FALSE, 
+                                  times = 1)
+trainData <- data[ trainIndex,]
+testData  <- data[-trainIndex,]
+
+# Check the distribution in the training and test sets
+table(trainData$y)
+table(testData$y)
+
+# Train the decision tree model
+model <- rpart(y ~ ., data = trainData, method = "class")
 
 # Plot the decision tree
-rpart.plot(tree_model)
-data("iris")
+rpart.plot(model, type = 3, extra = 104, fallen.leaves = TRUE)
+
+# Predict on the test data
+predictions <- predict(model, testData, type = "class")
+
+# Confusion matrix to evaluate the model
+confusionMatrix(predictions, testData$y)
